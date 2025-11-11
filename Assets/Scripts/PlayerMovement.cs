@@ -3,14 +3,19 @@
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
 {
-    private Rigidbody2D rb;
+    [Header("Movimiento")]
     public float moveSpeed = 8f;
     private float moveInput;
     private bool facingRight = true;
 
+    [Header("Referencias")]
+    public Animator animator;
+    private Rigidbody2D rb;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        if (animator == null) animator = GetComponent<Animator>();
     }
 
     void Update()
@@ -18,11 +23,15 @@ public class PlayerMovement : MonoBehaviour
         // Leer entrada horizontal (A/D o ←/→)
         moveInput = Input.GetAxisRaw("Horizontal");
 
-        // Voltear el sprite si cambia de dirección
-        if (moveInput > 0 && !facingRight)
-            Flip();
-        else if (moveInput < 0 && facingRight)
-            Flip();
+        // Actualizar parámetro "Speed" en el Animator (valor del input)
+        animator.SetFloat("Speed", Mathf.Abs(moveInput));
+
+        // Actualizar "MotionSpeed" usando la velocidad real horizontal (unidad: unidades/seg)
+        animator.SetFloat("MotionSpeed", Mathf.Abs(rb.linearVelocity.x));
+
+        // Voltear sprite si cambia de dirección
+        if (moveInput > 0 && !facingRight) Flip();
+        else if (moveInput < 0 && facingRight) Flip();
     }
 
     void FixedUpdate()
