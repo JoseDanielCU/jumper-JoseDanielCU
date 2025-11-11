@@ -6,32 +6,69 @@ public class PlayerJump : MonoBehaviour
     public float jumpForce = 10f;
 
     // Ground Check variables
+    public float fallMultiplier = 2.5f;
+    public float lowJumpMultiplier = 2f;
     public Transform groundCheck;
     public LayerMask groundLayer;
     private bool isGrounded;
+    private float coyoteTime = 0.15f;
+    private float coyoteTimeCounter;
     public float groundCheckRadius = 0.2f;
+    private float jumpBufferTime = 0.15f;
+    private float jumpBufferCounter;
+    public int extraJumps = 1;
+    private int extraJumpsValue;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        extraJumpsValue = extraJumps; // Set initial jumps
     }
+
 
     void Update()
     {
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        // --- Coyote Time & Double Jump Reset ---
+        if (isGrounded)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            coyoteTimeCounter = coyoteTime;
+            extraJumpsValue = extraJumps; // Reset double jumps
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
         }
 
-        // --- Variable Jump Height ---
-        if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
+        // --- Jump Buffering Logic ---
+        if (Input.GetButtonDown("Jump"))
         {
-            // If the button is released while jumping, cut the upward velocity
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+
+        // --- COMBINED Jump Input Check ---
+        if (jumpBufferCounter > 0f)
+        {
+            if (coyoteTimeCounter > 0f) // Priority 1: Ground Jump (uses coyote time)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                coyoteTimeCounter = 0f; // Consume coyote time
+                jumpBufferCounter = 0f; // Consume buffer
+            }
+            else if (extraJumpsValue > 0) // Priority 2: Air Jump
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce); // You could use a different jumpForce here
+                extraJumpsValue--; // Consume an air jump
+                jumpBufferCounter = 0f; // Consume buffer
+            }
         }
     }
+
 
 
 
